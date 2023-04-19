@@ -1,0 +1,2 @@
+# sb
+Simple Blockchain Coin
