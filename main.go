@@ -22,8 +22,6 @@ func main() {
 }
 
 func initBlockchain() {
-	// 初始化区块链
-	// 建立一个创世区块
 	chainDir := ".blockchain"
 	mainFile := "main"
 
@@ -49,17 +47,16 @@ func initBlockchain() {
 		os.Exit(1)
 	}
 
+	// genesisBlock := block.NewGenesisBlock()
+	// save to disk
 }
 
-// func main() {
-// 	start := time.Now()
-// 	utils.Dig(
-// 		utils.SHA256("tsy666"),
-// 		[]string{
-// 			"2023-04-20 is a good day",
-// 			"tsy666",
-// 		},
-// 		6,
-// 	)
-// 	fmt.Printf("cost time: %v\n", time.Since(start))
-// }
+func main1() {
+	// start := time.Now()
+	// blk := block.NewGenesisBlock()
+	// blk.Dig()
+	// fmt.Printf("cost time: %v\n", time.Since(start))
+
+	// blk := block.NewGenesisBlock()
+	// fmt.Println(blk.Verify())
+}

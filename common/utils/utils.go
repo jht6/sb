@@ -11,6 +11,15 @@ func SHA256(s string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(s)))
 }
 
+func HasLeadingZero(hex string, zeroCount int) bool {
+	for i := 0; i < zeroCount; i++ {
+		if hex[i] != '0' {
+			return false
+		}
+	}
+	return true
+}
+
 func Dig(prevHash string, infoList []string, zeroCount int) int {
 	pow := 0
 	str := prevHash + "||" + strings.Join(infoList, "||")
