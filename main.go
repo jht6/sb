@@ -1,24 +1,23 @@
 package main
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"os"
-
-	"github.com/gin-gonic/gin"
+	"sb/block"
 )
 
 func main() {
 	initBlockchain()
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		h := sha256.Sum256([]byte("a"))
-		h1 := sha256.Sum256([]byte("a"))
-		fmt.Printf("%x\n", h)
-		fmt.Printf("%x\n", h1)
-	})
 
-	r.Run(":8080")
+	// r := gin.Default()
+	// r.GET("/ping", func(c *gin.Context) {
+	// 	h := sha256.Sum256([]byte("a"))
+	// 	h1 := sha256.Sum256([]byte("a"))
+	// 	fmt.Printf("%x\n", h)
+	// 	fmt.Printf("%x\n", h1)
+	// })
+
+	// r.Run(":8080")
 }
 
 func initBlockchain() {
@@ -36,7 +35,8 @@ func initBlockchain() {
 	}
 
 	// if main chain file exists, clear it.
-	mainFilePath := "./" + chainDir + "/" + mainFile
+	cwd, _ := os.Getwd()
+	mainFilePath := cwd + "/" + chainDir + "/" + mainFile
 	_, err = os.Stat(mainFilePath)
 	if err == nil {
 		os.Remove(mainFilePath)
@@ -47,16 +47,20 @@ func initBlockchain() {
 		os.Exit(1)
 	}
 
-	// genesisBlock := block.NewGenesisBlock()
-	// save to disk
+	genesisBlock := block.NewGenesisBlock()
+	fmt.Println("genesisBlock created.")
+	err = genesisBlock.SaveToChain(mainFilePath)
+	if err != nil {
+		fmt.Println("save genesis block err:", err)
+	}
 }
 
-func main1() {
-	// start := time.Now()
-	// blk := block.NewGenesisBlock()
-	// blk.Dig()
-	// fmt.Printf("cost time: %v\n", time.Since(start))
+// func main() {
+// 	start := time.Now()
+// 	blk := block.NewGenesisBlock()
+// 	blk.Dig()
+// 	fmt.Printf("cost time: %v\n", time.Since(start))
 
-	// blk := block.NewGenesisBlock()
-	// fmt.Println(blk.Verify())
-}
+// 	blk := block.NewGenesisBlock()
+// 	fmt.Println(blk.Verify())
+// }

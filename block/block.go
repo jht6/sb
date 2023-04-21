@@ -1,30 +1,50 @@
 package block
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sb/common/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/goccy/go-json"
 )
 
-type Block struct {
+type BlockOpt struct {
 	Height    int
 	Timestamp int64
 	PrevHash  string
 	InfoList  []string
 	ZeroCnt   int
-	PoW       int
+}
+type Block struct {
+	Height    int   // block height
+	Timestamp int64 // second level timestamp
+	PrevHash  string
+	InfoList  []string
+	ZeroCnt   int
+
+	Nonce int
 }
 
-func New(height int, prevHash string, infoList []string, zeroCnt int, pow int) *Block {
+func New(opt *BlockOpt) *Block {
+	var ts int64
+	if opt.Timestamp > 0 {
+		ts = opt.Timestamp
+	} else {
+		ts = time.Now().Unix()
+	}
+
 	return &Block{
-		Height:    height,
-		Timestamp: time.Now().Unix(),
-		PrevHash:  prevHash,
-		InfoList:  infoList,
-		ZeroCnt:   zeroCnt,
-		PoW:       pow,
+		Height:    opt.Height,
+		Timestamp: ts,
+		PrevHash:  opt.PrevHash,
+		InfoList:  opt.InfoList,
+		ZeroCnt:   opt.ZeroCnt,
+
+		Nonce: -1,
 	}
 }
 
@@ -36,11 +56,11 @@ func NewGenesisBlock() *Block {
 	}
 	return &Block{
 		Height:    0,
-		Timestamp: 1681920000000,
+		Timestamp: 1681920000,
 		PrevHash:  hash,
 		InfoList:  info,
-		ZeroCnt:   6,
-		PoW:       13395002,
+		ZeroCnt:   5,
+		Nonce:     85084,
 	}
 }
 
@@ -51,9 +71,13 @@ func (blk *Block) Hash() string {
 		blk.Height,
 		blk.Timestamp,
 		blk.PrevHash,
-		strings.Join(blk.InfoList, "__"),
+		blk.InfoHash(),
 	)
 	return utils.SHA256(str)
+}
+
+func (blk *Block) InfoHash() string {
+	return utils.SHA256(strings.Join(blk.InfoList, "__"))
 }
 
 func (blk *Block) Dig() int {
@@ -72,15 +96,41 @@ func (blk *Block) Dig() int {
 	}
 }
 
-// Verify() verifies block's PoW
-func (blk *Block) Verify() bool {
+// Verify() verifies if block's Nonce meets requirement
+func (blk *Block) Verify() (bool, error) {
 	hash := blk.Hash()
-	// str=9ac1927269436217dd8ea7856fd28e12177fc1ef3d28cba4eb3ccf882fa9968d||13395002
-	str := hash + "||" + strconv.Itoa(blk.PoW)
+	str := hash + "||" + strconv.Itoa(blk.Nonce)
 	hex := utils.SHA256(str)
-	return utils.HasLeadingZero(hex, blk.ZeroCnt)
+	if utils.HasLeadingZero(hex, blk.ZeroCnt) {
+		return true, nil
+	}
+	err := fmt.Errorf("Block verifies fail:\nhex:%v\nzeroCnt:%v", hex, blk.ZeroCnt)
+	return false, err
 }
 
-func (block *Block) SaveToChain(filepath string) {
+// Verify block's Nonce, if it's ok, transform Block
+// to JSON and save it to disk.
+func (blk *Block) SaveToChain(filepath string) error {
+	if _, err := blk.Verify(); err != nil {
+		return err
+	}
 
+	jsonByte, _ := json.Marshal(blk)
+	jsonStr := string(jsonByte)
+
+	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	writer.WriteString(jsonStr + "\n")
+	err = writer.Flush()
+	if err != nil {
+		fmt.Println("write block to file err:", err)
+		return err
+	}
+
+	return nil
 }
